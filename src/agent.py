@@ -32,10 +32,14 @@ def extract_order_id(text: str) -> str | None:
     return normalize_digits(match.group(1)) if match else None
 
 URGENT_TERMS = (
-    "human agent", "speak to a human", "talk to a human", "legal action",
-    "consumer court", "police complaint", "not my order", "did not order",
-    "didn't order", "unauthorized", "unauthorised", "swelling battery",
-    "burning smell", "sparks", "injury",
+    "human agent", "speak to a human", "talk to a human", "speak to an agent",
+    "talk to an agent", "real person", "customer service representative",
+    "manager", "legal action", "consumer court", "police complaint",
+    "not my order", "did not order", "didn't order", "didn't place this order",
+    "did not place this order", "unauthorized", "unauthorised",
+    "unauthorized transaction", "unrecognised transaction", "unrecognized transaction",
+    "swelling battery", "burning smell", "sparks", "injury", "overheating",
+    "hot battery", "getting hot",
 )
 INTENT_TERMS = {
     "refund": ("refund", "money back", "reimbursement"),
@@ -107,7 +111,7 @@ class SupportAgent:
             self.order_id = urgent_order_id
         if any(term in raw_question.casefold() for term in URGENT_TERMS):
             intent = self._intent(raw_question)
-            reason = "safety_or_sensitive_issue" if any(t in raw_question.casefold() for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation"
+            reason = "safety_or_sensitive_issue" if any(t in raw_question.casefold() for t in ("battery", "burning smell", "sparks", "injury", "overheating", "getting hot", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "didn't place this order", "did not place this order", "unrecognized transaction", "unrecognised transaction", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation"
             try:
                 ticket = self._ticket(raw_question, reason, intent)
             except Exception:
