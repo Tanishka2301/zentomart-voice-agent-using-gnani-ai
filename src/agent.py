@@ -133,9 +133,20 @@ class SupportAgent:
             except Exception:
                 ticket = {"created": False}
             tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
+            mode = language_mode(raw_question)
             if ticket.get("created"):
-                return self._result("I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome.", tool_calls=tool_calls)
-            return self._result("This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly.", tool_calls=tool_calls)
+                answer = (
+                    "आपकी रिक्वेस्ट मानव सपोर्ट टीम को भेज दी गई है। टिकट बन गया है; मैं किसी खास नतीजे का वादा नहीं कर सकती।" if mode == "hi" else
+                    "Aapki request human support team ko bhej di hai. Ticket create ho gaya hai; main kisi specific outcome ka promise nahi kar sakti." if mode == "hi-en" else
+                    "I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome."
+                )
+                return self._result(answer, tool_calls=tool_calls)
+            answer = (
+                "इस मामले में मानव सपोर्ट टीम की समीक्षा ज़रूरी है, लेकिन टिकट नहीं बन पाया। कृपया सीधे कस्टमर सपोर्ट से संपर्क करें।" if mode == "hi" else
+                "Is case mein human support team ki review zaroori hai, lekin ticket create nahi ho paya. Kripya customer support se contact karein." if mode == "hi-en" else
+                "This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly."
+            )
+            return self._result(answer, tool_calls=tool_calls)
 
         # Identity verification is a stateful gate. Never pass proof to the LLM/history.
         order_id = extract_order_id(raw_question)
