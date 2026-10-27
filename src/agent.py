@@ -233,7 +233,7 @@ class SupportAgent:
                 is_urgent = True
                 escalation_reason = "repeat_contact_within_7_days"
             issue_sku = str(self.verified_order.get("damage_sku") or "")
-            damage_reported_by_caller = any(term in low for term in ("damaged", "defective", "wrong item", "missing item"))
+            damage_reported_by_caller = any(term in low for term in ("damage", "damaged", "defective", "wrong item", "missing item"))
             if damage_reported_by_caller:
                 candidates = []
                 for item in self.verified_order.get("items", []):
