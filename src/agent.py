@@ -22,6 +22,7 @@ Never disclose order-specific information unless the approved lookup tool has re
 
 ORDER_ID_RE = re.compile(r"(?<!\d)(\d{8}|\d{4}[\s-]+\d{4})(?!\d)")
 DIGITS_RE = re.compile(r"(?<!\d)(\d{4}|\d{6})(?!\d)")
+SENSITIVE_DIGITS_RE = re.compile(r"(?<!\d)\d{4,}(?!\d)")
 
 def normalize_digits(value: str) -> str:
     return "".join(str(unicodedata.digit(char)) for char in value if char.isdigit())
@@ -83,7 +84,7 @@ class SupportAgent:
         return "customer_support"
 
     def _ticket(self, question: str, reason: str, intent: str) -> dict[str, Any]:
-        safe_issue = DIGITS_RE.sub("[VERIFICATION_CODE]", ORDER_ID_RE.sub("[ORDER_ID]", question[:500]))
+        safe_issue = SENSITIVE_DIGITS_RE.sub("[REDACTED_NUMBER]", ORDER_ID_RE.sub("[ORDER_ID]", question[:500]))
         summary = (f"Issue: {safe_issue}. Intent: {intent}. "
                    f"Order ID: {self.order_id or 'not provided'}. "
                    f"Checks: reviewed current conversation and available retrieved policy evidence. "
@@ -254,7 +255,7 @@ Answer using only supported facts. If the customer asks about a specific order a
         response = self.client.models.generate_content(model=self.model, contents=prompt)
         answer = (getattr(response, "text", None) or "").strip() or "I’m sorry, I couldn’t prepare a response just now. Please try again."
         # Never put verification values into conversational memory.
-        safe_question = DIGITS_RE.sub("[VERIFICATION_CODE]", ORDER_ID_RE.sub("[ORDER_ID]", raw_question))
+        safe_question = SENSITIVE_DIGITS_RE.sub("[REDACTED_NUMBER]", ORDER_ID_RE.sub("[ORDER_ID]", raw_question))
         self.history.extend([{"role": "user", "content": safe_question}, {"role": "assistant", "content": answer}])
         self.introduced = True
         sources = [{"source": c.source, "section_id": c.section_id, "score": round(score, 4)} for c, score in retrieved]
