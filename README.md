@@ -81,10 +81,10 @@ This creates `outputs/conversation_evaluation.json`. Review flagged turns manual
 Batch voice processing (record your own audio; the dataset has no prerecorded audio):
 
 ```bash
-python run_audio.py --input-dir recordings --output-dir outputs/voice --kb-dir data/knowledge_base --language en-IN
+python run_audio.py --input-dir recordings --output-dir outputs/voice --kb-dir data/knowledge_base --language en-IN --tts-language auto
 ```
 
-Supported input extensions are WAV, MP3, FLAC, OGG and M4A. Gnani SDK behavior and audio formats must be smoke-tested with your account.
+Supported input extensions are WAV, MP3, FLAC, OGG and M4A. `--language` selects the input STT language; `--tts-language auto` chooses English, Hindi, or Hinglish synthesis from the generated reply (override it with `en-IN`, `hi-IN`, or `hi-en` if needed). Gnani SDK behavior and audio formats must be smoke-tested with your account.
 
 ## Dataset and safety rules
 
