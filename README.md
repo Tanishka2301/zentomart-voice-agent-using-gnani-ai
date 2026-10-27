@@ -60,6 +60,8 @@ Tests:
 pytest -q
 ```
 
+The offline suite covers retrieval and business-rule behavior. Dataset-backed security tests are automatically skipped unless `ZENTOMART_DATA_DIR` points to the extracted synthetic dataset; with it configured, they verify that order details remain hidden until the supplied verification check succeeds.
+
 Evaluate the 52 single-turn practice questions (requires Gemini access):
 
 ```bash
