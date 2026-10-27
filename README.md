@@ -2,7 +2,7 @@
 
 An AI-powered customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
 
-> **Current status:** Initial text prototype scaffold committed. Retrieval and Gemini response code are implemented, but they have **not been executed or validated in this GitHub-only session**. Order tools, full dataset validation, practice-set evaluation, and Gnani voice flow remain to be integrated and tested.
+> **Current status:** Initial text prototype scaffold committed. Retrieval, Gemini response logic, a Gnani STT/TTS adapter, and a batch audio entry point are committed, but they have **not been executed or validated in this GitHub-only session**. Order tools, full dataset validation, practice-set evaluation, and end-to-end voice testing remain.
 
 ## Capstone goals
 
@@ -84,7 +84,7 @@ Run the retrieval tests:
 pytest -q
 ```
 
-The text prototype requires a valid Gemini API key. Gnani voice integration is not yet wired into the runnable entry point.
+The text prototype requires a valid Gemini API key. The batch voice entry point also requires a valid Gnani API key and compatible audio files. It uses the documented `gnani-vachana` SDK calls; actual provider behavior still needs a local smoke test.
 
 ## Dataset rules
 
