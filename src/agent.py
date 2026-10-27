@@ -48,6 +48,7 @@ class SupportAgent:
         self.verification_attempts = 0
         self.awaiting_verification = False
         self.introduced = False
+        self.pending_question: str | None = None
 
     def reset(self) -> None:
         self.history.clear()
@@ -56,6 +57,7 @@ class SupportAgent:
         self.verification_attempts = 0
         self.awaiting_verification = False
         self.introduced = False
+        self.pending_question = None
 
     def _result(self, answer: str, sources=None, tool_calls=None) -> dict[str, Any]:
         return {"answer": answer, "sources": sources or [], "tool_calls": tool_calls or []}
@@ -88,6 +90,7 @@ class SupportAgent:
             self.verified_order = None
             self.verification_attempts = 0
             self.awaiting_verification = True
+            self.pending_question = raw_question
             pending = lookup_order(self.order_id)
             tool_calls.append({"tool": "lookup_order", "verified": bool(pending.get("verified"))})
             safe_question = ORDER_ID_RE.sub("[ORDER_ID]", raw_question)
@@ -107,6 +110,9 @@ class SupportAgent:
             if checked.get("verified") and checked.get("found"):
                 self.verified_order = checked
                 self.awaiting_verification = False
+                if self.pending_question:
+                    raw_question = self.pending_question
+                    self.pending_question = None
             else:
                 if self.verification_attempts >= 2:
                     self.awaiting_verification = False
