@@ -27,7 +27,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Check local credentials, dataset layout, KB files, and audio dependencies without making API calls."
     )
-    parser.add_argument("--dataset-dir", default=os.getenv("ZENTOMART_DATA_DIR", ""))
+    parser.add_argument("--dataset-dir", default=None, help="Dataset folder (defaults to ZENTOMART_DATA_DIR from .env)")
     parser.add_argument("--kb-dir", default="data/knowledge_base")
     parser.add_argument("--audio", action="store_true", help="Also check the Gnani audio SDK imports")
     args = parser.parse_args()
@@ -39,11 +39,12 @@ def main() -> int:
         print(f"{'OK' if present else 'MISSING'}: {key}")
         failed |= not present
 
-    if not args.dataset_dir:
+    dataset_dir = args.dataset_dir or os.getenv("ZENTOMART_DATA_DIR", "").strip()
+    if not dataset_dir:
         print("MISSING: ZENTOMART_DATA_DIR / --dataset-dir")
         failed = True
     else:
-        root = Path(args.dataset_dir).expanduser().resolve()
+        root = Path(dataset_dir).expanduser().resolve()
         if not root.is_dir():
             print(f"MISSING: dataset directory does not exist: {root}")
             failed = True
