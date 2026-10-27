@@ -1,82 +1,117 @@
 # ZentroMart Voice Agent
 
-An AI-powered customer-support assistant for the fictional ZentroMart store. This repository will contain the application code, setup instructions, and evaluation/demo materials for the VoiceOps capstone.
+An AI-powered customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
 
-> **Project status:** Initial repository scaffold. Features listed below are planned until implemented and tested.
+> **Current status:** Initial text prototype scaffold committed. Retrieval and Gemini response code are implemented, but they have **not been executed or validated in this GitHub-only session**. Order tools, full dataset validation, practice-set evaluation, and Gnani voice flow remain to be integrated and tested.
 
-## Goals
+## Capstone goals
 
-- Answer customer questions using a large language model (LLM).
-- Retrieve grounded answers from ZentroMart's knowledge base using retrieval-augmented generation (RAG).
-- Maintain conversational context during a session.
-- Provide mock order lookup and support-ticket tools using safe sample data.
-- Escalate unresolved or sensitive cases to a human-support workflow.
-- Integrate Gnani.ai speech-to-text (STT) and text-to-speech (TTS), subject to available API credentials and documentation.
+- Answer customer questions using ZentroMart's company documents.
+- Retrieve relevant policy/FAQ passages (RAG) and report the source sections used.
+- Maintain conversation context for follow-up questions.
+- Integrate the supplied `lookup_order(order_id)` and `create_ticket(summary)` tools, including caller verification and honest handoff reporting.
+- Use **Gnani.ai only** for speech-to-text (STT) and text-to-speech (TTS).
+- Provide a reproducible batch-run command that processes a folder of audio files and saves replies, speech, and retrieved evidence.
 
-## Planned request flow
+## Architecture
 
-1. Receive a typed or spoken customer query.
-2. If speech is used, convert speech to text through the speech provider.
-3. Retrieve relevant knowledge-base passages.
-4. Send the query, retrieved context, and conversation history to the configured LLM.
-5. Invoke an approved mock tool when an order lookup or support ticket is needed.
-6. Return the answer as text and, when configured, synthesized speech.
-7. Escalate when the assistant cannot safely or confidently resolve the issue.
+```text
+Customer text
+    ↓
+Lexical retrieval over kb/*.md
+    ↓
+Retrieved excerpts + recent conversation
+    ↓
+Gemini LLM (GEMINI_API_KEY)
+    ↓
+Answer + source section IDs
+
+Voice pipeline (planned):
+Audio → Gnani STT → same support agent → Gnani TTS → saved reply audio
+```
+
+The current retrieval baseline uses lexical scoring rather than vector embeddings. This is an intentionally simple baseline; it must be evaluated against the provided `gold_evidence` labels before claiming retrieval quality. A later iteration can add embeddings if that improves measured results.
 
 ## Repository layout
 
 ```text
-zentomart-voice-agent-using-gnani-ai/
-├── app/                 # Application modules (to be added)
+.
+├── src/
+│   ├── __init__.py
+│   ├── agent.py            # Gemini-backed response logic
+│   └── retrieval.py        # Markdown chunking and lexical retrieval
+├── tests/
+│   └── test_retrieval.py
 ├── data/
-│   └── knowledge_base/  # Sanitized, permitted knowledge-base documents only
-├── tests/               # Automated tests
-├── docs/                # Architecture, report, and demo notes
-├── .env.example         # Names of required environment variables; no secrets
+│   └── knowledge_base/     # Place permitted kb/*.md files here locally
+├── docs/                   # Report and demo notes (to be added)
+├── .env.example            # Variable names only; no credentials
 ├── .gitignore
 ├── requirements.txt
-└── README.md
+└── run.py                  # Text-mode prototype entry point
 ```
 
 ## Setup
 
-Python 3.11 or a compatible supported version is recommended.
+Python 3.11 or a compatible version is recommended.
 
-1. Install Python and Git.
-2. Clone this repository.
-3. Create and activate a virtual environment.
-4. Install dependencies from `requirements.txt`.
-5. Copy `.env.example` to `.env` and fill in your own API credentials locally.
-6. Follow the run instructions that will be added when the application entry point is implemented.
+1. Clone this repository and open its folder.
+2. Create and activate a virtual environment.
+3. Install dependencies:
 
-The exact provider SDKs, model, and run command will be documented after the implementation is selected and tested.
+   ```bash
+   python -m venv .venv
+   # Windows PowerShell:
+   .\.venv\Scripts\Activate.ps1
+   # macOS/Linux:
+   # source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-## Configuration and security
+4. Copy `.env.example` to a local file named `.env`, then add your own `GEMINI_API_KEY` and `GNANI_API_KEY`. Do not commit `.env`.
+5. Extract the supplied capstone ZIP locally. Read `README.md`, `DATA_DICTIONARY.md`, and `ZIP_SCHEMA.md` first. Keep the dataset ZIP, customer/order CSVs, and private evaluation data out of this public repository.
+6. For the current text prototype, place the supplied `kb/` folder at `data/knowledge_base/` locally, or pass its path to `--kb-dir`.
 
-- Never commit API keys, passwords, access tokens, or a real `.env` file.
-- Do not upload the supplied capstone dataset ZIP, customer/order records, or private evaluation data.
-- Use only sanitized and permitted knowledge-base content in the public repository.
-- Keep mock order/ticket data synthetic and clearly labelled as test data.
-- Validate tool inputs and avoid exposing one customer's data to another session.
+Run the text prototype:
+
+```bash
+python run.py --kb-dir data/knowledge_base
+```
+
+Run the retrieval tests:
+
+```bash
+pytest -q
+```
+
+The text prototype requires a valid Gemini API key. Gnani voice integration is not yet wired into the runnable entry point.
+
+## Dataset rules
+
+- Use the supplied synthetic dataset only; do not use real customer data or real call recordings.
+- Keep all customer/order identifiers and pincodes as strings.
+- Use the current policy documents and respect their precedence. Superseded policies must not override current policy.
+- Historical support logs are context, not policy authority.
+- The dataset's reference date is **20 October 2026**. Business-day calculations run Monday–Saturday, excluding dates in `holidays.csv`; return windows use calendar days.
+- Verify callers using the supplied tool's required phone-last-four-digits or delivery-pincode check before revealing order details.
+- Report ticket creation/handoff only when the tool confirms success.
 
 ## Planned milestones
 
-- [ ] Inspect the brief and dataset structure locally; identify files safe to use.
-- [ ] Build the minimal customer-support chat flow.
-- [ ] Add knowledge-base retrieval (RAG).
-- [ ] Add session memory and mock order/ticket tools.
-- [ ] Add human handoff behavior.
-- [ ] Integrate Gnani.ai STT/TTS where credentials and API access permit.
-- [ ] Add tests and a reproducible batch-run command.
-- [ ] Prepare a report (maximum 4 pages) and a demo (maximum 2 minutes).
+- [x] Create repository scaffold and secret/data exclusions.
+- [x] Add Markdown knowledge-base chunking and lexical retrieval baseline.
+- [x] Add a Gemini-backed text response prototype with source reporting.
+- [ ] Run the code and tests locally; fix any environment or API issues.
+- [ ] Inspect the supplied dataset and use the provided validation script.
+- [ ] Connect the supplied order lookup and ticket creation tools safely.
+- [ ] Add session-aware follow-ups, clarifying questions, refusals, and handoff logic.
+- [ ] Evaluate prompt-only (Step 1) versus retrieval-grounded (Step 2) answers on the practice set.
+- [ ] Integrate Gnani STT/TTS using the official SDK and named TTS model.
+- [ ] Add the required batch audio command and save transcript, response text/audio, and retrieved evidence.
+- [ ] Prepare a report of up to four pages and a demo of up to two minutes.
 
-## Deliverables
+## Security
 
-- Source code and setup/run instructions.
-- A reproducible batch-run command.
-- A report of up to four pages.
-- A demo video of up to two minutes.
-
-## License and dataset
-
-Only add a license after confirming that the source code and any included materials may be redistributed. The capstone dataset and customer/order records are intentionally excluded from this repository.
+- Never commit API keys, passwords, access tokens, or a real `.env` file.
+- Do not upload the supplied dataset ZIP, raw CSV tables, or private evaluation files.
+- Do not add a public license until redistribution rights for all included material are confirmed.
