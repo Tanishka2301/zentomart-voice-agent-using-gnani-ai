@@ -78,8 +78,10 @@ class SupportAgent:
                    f"Order ID: {self.order_id or 'not provided'}. "
                    f"Checks: reviewed current conversation and available retrieved policy evidence. "
                    f"Escalation reason: {reason}.")
-        result = create_ticket(summary=summary, order_id=self.order_id, reason=reason, intent=intent)
-        return result
+        try:
+            return create_ticket(summary=summary, order_id=self.order_id, reason=reason, intent=intent)
+        except Exception as exc:
+            return {"created": False, "error": type(exc).__name__}
 
     def respond(self, question: str, top_k: int = 5) -> dict[str, Any]:
         raw_question = (question or "").strip()
