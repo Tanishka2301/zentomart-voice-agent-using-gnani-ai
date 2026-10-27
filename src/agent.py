@@ -193,7 +193,7 @@ class SupportAgent:
                         candidates.append(item)
                 if len(candidates) == 1:
                     item = candidates[0]
-                    if int(item.get("unit_price_inr") or 0) * int(item.get("qty") or 1) > 10000:
+                    if int(item.get("unit_price_inr") or 0) > 10000:
                         is_urgent = True
                         escalation_reason = "high_value_damaged_or_wrong_item"
         if is_urgent:
