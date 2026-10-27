@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,9 +22,22 @@ class Chunk:
     status: str = "current"
 
 def tokenize(text: str) -> list[str]:
-    # Normalize common Devanagari nukta variants so equivalent spellings match.
-    text = text.replace("\u093c", "")
-    return [token.lower() for token in TOKEN_RE.findall(text)]
+    # Keep combining marks: Python's regular-expression \\w class drops many
+    # Devanagari vowel signs and would split Hindi words into fragments.
+    text = text.replace("\\u093c", "")
+    tokens: list[str] = []
+    current: list[str] = []
+    for char in text:
+        category = unicodedata.category(char)
+        if category[0] in {"L", "N", "M"}:
+            current.append(char.lower())
+        else:
+            if current:
+                tokens.append("".join(current))
+                current = []
+    if current:
+        tokens.append("".join(current))
+    return tokens
 
 QUERY_EXPANSIONS = {
     "रिफंड": ("refund",), "रिफ़ंड": ("refund",),
