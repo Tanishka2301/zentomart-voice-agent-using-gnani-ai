@@ -94,6 +94,15 @@ class KnowledgeBase:
         expanded_tokens = list(query_tokens)
         for token in query_tokens:
             expanded_tokens.extend(QUERY_EXPANSIONS.get(token, ()))
+        normalized_query = query.replace("\\u093c", "").casefold()
+        for source, expansions in QUERY_EXPANSIONS.items():
+            normalized_source = source.replace("\\u093c", "").casefold()
+            if any("\\u0900" <= char <= "\\u097f" for char in normalized_source):
+                matched = normalized_source in normalized_query
+            else:
+                matched = bool(re.search(r"\\b" + re.escape(normalized_source) + r"\\b", normalized_query))
+            if matched:
+                expanded_tokens.extend(expansions)
         query_terms = Counter(expanded_tokens)
         if not query_terms:
             return []
