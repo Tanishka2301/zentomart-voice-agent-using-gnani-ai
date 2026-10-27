@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import os
 import re
+import unicodedata
 from pathlib import Path
 
 TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
@@ -41,7 +42,7 @@ def lookup_pincodes(query: str) -> list[dict[str, str]]:
     path = Path(configured).expanduser().resolve() / "data" / "pincodes.csv"
     if not path.is_file():
         return []
-    codes = set(re.findall(r"(?<!\d)\d{6}(?!\d)", query))
+    codes = {"".join(str(unicodedata.digit(ch)) for ch in match) for match in re.findall(r"(?<!\d)\d{6}(?!\d)", query)}
     if not codes:
         return []
     with path.open(encoding="utf-8-sig", newline="") as handle:
