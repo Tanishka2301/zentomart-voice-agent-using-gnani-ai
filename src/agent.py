@@ -9,6 +9,7 @@ from typing import Any
 from google import genai
 
 from src.business_tools import create_ticket, lookup_order
+from src.catalog import search_products
 from src.retrieval import KnowledgeBase
 
 SYSTEM_RULES = """You are ZentroMart's AI customer-support assistant. Introduce yourself as the AI assistant in your first reply. Keep replies to 2–3 short sentences and reply in the customer's language (English, Hindi, or Hinglish). For voice-friendly wording, say dates with month names and amounts in rupees.
@@ -170,6 +171,11 @@ class SupportAgent:
             f"[Source: {chunk.source}; Section: {chunk.section_id}; score: {score:.3f}]\n{chunk.text}"
             for chunk, score in retrieved
         ) or "No relevant knowledge-base excerpts were retrieved."
+        products = search_products(raw_question, limit=4)
+        product_context = "\n".join(
+            f"[Source: products.csv:{item.get('sku', '')}] " + json.dumps(item, ensure_ascii=False)
+            for item in products
+        ) or "No product-catalog matches were found."
         verified_context = "No verified order details are available."
         if self.verified_order:
             safe_order = dict(self.verified_order)
@@ -189,6 +195,9 @@ CONVERSATION SO FAR:
 RETRIEVED COMPANY DOCUMENT EXCERPTS:
 {context}
 
+MATCHING PRODUCT CATALOG RECORDS:
+{product_context}
+
 VERIFIED ORDER DATA (may be used only because lookup succeeded):
 {verified_context}
 
@@ -204,4 +213,5 @@ Answer using only supported facts. If the customer asks about a specific order a
         self.history.extend([{"role": "user", "content": safe_question}, {"role": "assistant", "content": answer}])
         self.introduced = True
         sources = [{"source": c.source, "section_id": c.section_id, "score": round(score, 4)} for c, score in retrieved]
+        sources.extend({"source": "products.csv", "section_id": f"products.csv:{item.get('sku', '')}", "score": 100.0} for item in products)
         return self._result(answer, sources, tool_calls)
