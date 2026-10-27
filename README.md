@@ -12,7 +12,7 @@ An AI customer-support assistant for the fictional ZentroMart store, built for t
 - Order lookup through the dataset's original `tools/tools.py`. Order details are not returned until the caller supplies the registered phone's last four digits or delivery pincode.
 - Synthetic human-handover tickets through the supplied `create_ticket` tool. The agent reports a ticket only when the tool confirms creation.
 - Gnani.ai STT/TTS adapter and batch audio processing; no audio files are included in the dataset.
-- Practice-question evaluation output with required/forbidden fact checks and evidence-hit tracking.
+- Prompt-only versus RAG evaluation, multi-turn conversation checks, required/forbidden fact checks, and evidence-hit tracking.
 
 ## Setup
 
@@ -102,10 +102,12 @@ src/
   agent.py             # Gemini response flow, verification gate, ticket escalation
   business_tools.py    # safe adapter to the supplied offline tools
   retrieval.py         # metadata-aware Markdown chunking and retrieval
+  order_rules.py        # business-day refund escalation rules
   voice.py             # Gnani STT/TTS adapter
 scripts/
   import_dataset.py    # copies KB Markdown only
-  evaluate.py          # practice-question checks and evidence tracking
+  evaluate.py          # prompt-only vs RAG comparison
+  evaluate_conversations.py # multi-turn and tool-call checks
 tests/
 run.py                  # text chat
 run_audio.py            # batch audio pipeline
