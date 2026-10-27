@@ -192,6 +192,7 @@ class SupportAgent:
             f"[Source: pincodes.csv:{item.get('pincode', '')}] " + json.dumps(item, ensure_ascii=False)
             for item in pincode_rows
         ) or "No pincode serviceability record was requested or found."
+        calendar = calendar_context() if self.use_retrieval else "No company calendar or holiday context is supplied in prompt-only mode."
         verified_context = "No verified order details are available."
         if self.verified_order:
             safe_order = dict(self.verified_order)
@@ -218,7 +219,7 @@ DELIVERY PINCODE SERVICEABILITY RECORDS:
 {pincode_context}
 
 DATASET CALENDAR:
-{calendar_context()}
+{calendar}
 
 VERIFIED ORDER DATA (may be used only because lookup succeeded):
 {verified_context}
