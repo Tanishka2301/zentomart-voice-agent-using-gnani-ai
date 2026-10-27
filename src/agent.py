@@ -10,6 +10,7 @@ from google import genai
 
 from src.business_tools import create_ticket, lookup_order
 from src.catalog import calendar_context, lookup_pincodes, search_products
+from src.order_rules import refund_overdue
 from src.retrieval import KnowledgeBase
 
 SYSTEM_RULES = """You are ZentroMart's AI customer-support assistant. Introduce yourself as the AI assistant in your first reply. Keep replies to 2–3 short sentences and reply in the customer's language (English, Hindi, or Hinglish). For voice-friendly wording, say dates with month names and amounts in rupees.
@@ -156,6 +157,13 @@ class SupportAgent:
         is_urgent = any(term in low for term in URGENT_TERMS)
         escalation_reason = None
         if self.verified_order:
+            late_refund = refund_overdue(self.verified_order, raw_question)
+            if late_refund:
+                is_urgent = True
+                escalation_reason = (
+                    f"{late_refund['reason']} (maximum due date {late_refund['maximum_due_date']}; "
+                    f"{late_refund['business_days_past_maximum']} business days overdue)"
+                )
             contacts = int(self.verified_order.get("contacts_last_7_days") or 0)
             if contacts >= 2:
                 is_urgent = True
