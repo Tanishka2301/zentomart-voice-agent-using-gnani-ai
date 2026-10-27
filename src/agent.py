@@ -149,10 +149,11 @@ class SupportAgent:
                 is_urgent = True
                 escalation_reason = "repeat_contact_within_7_days"
             issue_sku = str(self.verified_order.get("damage_sku") or "")
-            if issue_sku:
+            damage_reported_by_caller = any(term in low for term in ("damaged", "defective", "wrong item", "missing item"))
+            if issue_sku and damage_reported_by_caller:
                 for item in self.verified_order.get("items", []):
                     if str(item.get("sku") or "") == issue_sku:
-                        if int(item.get("unit_price_inr") or 0) > 10000:
+                        if int(item.get("unit_price_inr") or 0) * int(item.get("qty") or 1) > 10000:
                             is_urgent = True
                             escalation_reason = "high_value_damaged_or_wrong_item"
                         break
