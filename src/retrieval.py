@@ -1,10 +1,4 @@
-"""Lightweight retrieval over the supplied Markdown knowledge base.
-
-This first version uses lexical TF-IDF-style scoring so it works without a
-separate embedding service. It preserves section IDs and source paths for
-grounded answers and evaluation. It is intentionally not a replacement for
-testing retrieval against the capstone's gold_evidence labels.
-"""
+"""Policy-aware lexical retrieval for Markdown knowledge-base documents."""
 from __future__ import annotations
 
 import math
@@ -14,12 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
-SECTION_RE = re.compile(r"\[([A-Za-z0-9_-]+)\]")
-
-
-def tokenize(text: str) -> list[str]:
-    return [token.lower() for token in TOKEN_RE.findall(text)]
-
+SECTION_RE = re.compile(r"^##\s*\[([A-Za-z0-9_.-]+)\]", re.MULTILINE)
+META_RE = re.compile(r"(?m)^([a-z_]+):\s*(.*?)\s*$")
 
 @dataclass(frozen=True)
 class Chunk:
@@ -27,7 +17,11 @@ class Chunk:
     section_id: str
     text: str
     terms: Counter[str]
+    doc_type: str = "unknown"
+    status: str = "current"
 
+def tokenize(text: str) -> list[str]:
+    return [token.lower() for token in TOKEN_RE.findall(text)]
 
 class KnowledgeBase:
     def __init__(self, chunks: list[Chunk]):
@@ -44,15 +38,17 @@ class KnowledgeBase:
             raise FileNotFoundError(f"Knowledge-base directory not found: {root}")
         paths = sorted(root.rglob("*.md"))
         if not paths:
-            raise FileNotFoundError(
-                f"No Markdown knowledge-base files found in {root}. "
-                "Extract the supplied dataset and point --kb-dir to its kb folder."
-            )
-
+            raise FileNotFoundError(f"No Markdown knowledge-base files found in {root}.")
         chunks: list[Chunk] = []
         for path in paths:
             text = path.read_text(encoding="utf-8", errors="replace")
-            # Split by headings where possible, then subdivide long sections.
+            metadata_match = re.search(r"(?s)^---\s*\n(.*?)\n---", text)
+            metadata = dict(META_RE.findall(metadata_match.group(1))) if metadata_match else {}
+            status = metadata.get("status", "current").strip().lower()
+            doc_type = metadata.get("doc_type", "unknown").strip().lower()
+            # Superseded documents must never compete with current policy.
+            if status == "superseded":
+                continue
             sections = re.split(r"(?m)(?=^#{1,6}\s+)", text)
             for section in sections:
                 section = section.strip()
@@ -61,14 +57,13 @@ class KnowledgeBase:
                 match = SECTION_RE.search(section)
                 section_id = match.group(1) if match else path.stem
                 words = section.split()
-                for start in range(0, len(words), chunk_words):
-                    part = " ".join(words[start:start + chunk_words]).strip()
+                for start in range(0, len(words), max(1, chunk_words)):
+                    part = " ".join(words[start:start + max(1, chunk_words)]).strip()
                     if part:
                         chunks.append(Chunk(
-                            source=str(path.as_posix()),
-                            section_id=section_id,
-                            text=part,
-                            terms=Counter(tokenize(part)),
+                            source=str(path.as_posix()), section_id=section_id,
+                            text=part, terms=Counter(tokenize(part)),
+                            doc_type=doc_type, status=status,
                         ))
         return cls(chunks)
 
@@ -77,15 +72,16 @@ class KnowledgeBase:
         if not query_terms:
             return []
         scored: list[tuple[Chunk, float]] = []
+        priority = {"policy": 1.35, "agent_guide": 1.2, "help": 1.05, "faq": 1.0, "marketing": 0.7}
         for chunk in self.chunks:
             score = 0.0
             for term, q_count in query_terms.items():
                 tf = chunk.terms.get(term, 0)
-                if not tf:
-                    continue
-                df = self.document_frequency.get(term, 0)
-                idf = math.log(1 + (self.total_documents - df + 0.5) / (df + 0.5))
-                score += q_count * idf * (tf / (tf + 1.2))
+                if tf:
+                    df = self.document_frequency.get(term, 0)
+                    idf = math.log(1 + (self.total_documents - df + 0.5) / (df + 0.5))
+                    score += q_count * idf * (tf / (tf + 1.2))
+            score *= priority.get(chunk.doc_type, 1.0)
             if score > 0:
                 scored.append((chunk, score))
         scored.sort(key=lambda item: item[1], reverse=True)
