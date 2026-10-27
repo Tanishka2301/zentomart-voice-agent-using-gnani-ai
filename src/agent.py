@@ -31,6 +31,20 @@ def extract_order_id(text: str) -> str | None:
     match = ORDER_ID_RE.search(text)
     return normalize_digits(match.group(1)) if match else None
 
+def language_mode(text: str) -> str:
+    if any("\\u0900" <= char <= "\\u097f" for char in text):
+        return "hi"
+    low = text.casefold()
+    markers = ("mujhe", "mera", "meri", "hai", "hain", "kahan", "nahi", "kar sakti", "kar do", "chahiye", "order number hai", "last four digits")
+    return "hi-en" if any(marker in low for marker in markers) else "en"
+
+def verification_prompt(mode: str) -> str:
+    if mode == "hi":
+        return "आपके ऑर्डर की जानकारी सुरक्षित रखने के लिए, कृपया रजिस्टर्ड फोन नंबर के आख़िरी चार अंक या इस ऑर्डर का डिलीवरी पिनकोड बताएं।"
+    if mode == "hi-en":
+        return "Order details secure rakhne ke liye, registered phone number ke last 4 digits ya delivery pincode batayein."
+    return "To protect your order details, please share either the last four digits of your registered phone number or the delivery pincode for this order."
+
 URGENT_TERMS = (
     "human agent", "speak to a human", "talk to a human", "speak to an agent",
     "talk to an agent", "real person", "customer service representative",
@@ -133,14 +147,27 @@ class SupportAgent:
             tool_calls.append({"tool": "lookup_order", "verified": bool(pending.get("verified"))})
             safe_question = ORDER_ID_RE.sub("[ORDER_ID]", raw_question)
             self.history.append({"role": "user", "content": safe_question})
-            self.history.append({"role": "assistant", "content": "Order verification requested."})
+            mode = language_mode(raw_question)
+            prefix = "" if self.introduced else (
+                "मैं ZentroMart की AI सपोर्ट असिस्टेंट हूँ। " if mode == "hi" else
+                "Main ZentroMart ki AI support assistant hoon. " if mode == "hi-en" else
+                "I’m ZentroMart’s AI support assistant. "
+            )
+            answer = prefix + verification_prompt(mode)
+            self.history.append({"role": "assistant", "content": answer})
             self.introduced = True
-            return self._result("I’m ZentroMart’s AI support assistant. To protect your order details, please share either the last four digits of your registered phone number or the delivery pincode for this order.", tool_calls=tool_calls)
+            return self._result(answer, tool_calls=tool_calls)
 
         if self.awaiting_verification and self.order_id and not self.verified_order:
             digits = DIGITS_RE.search(raw_question)
             if not digits:
-                return self._result("Please share either the last four digits of your registered phone number or the six-digit delivery pincode for this order.", tool_calls=tool_calls)
+                mode = language_mode(raw_question)
+                answer = (
+                    "कृपया रजिस्टर्ड फोन नंबर के आख़िरी चार अंक या इस ऑर्डर का छह अंकों वाला डिलीवरी पिनकोड बताएं।" if mode == "hi" else
+                    "Registered phone ke last 4 digits ya is order ka 6-digit delivery pincode batayein." if mode == "hi-en" else
+                    "Please share either the last four digits of your registered phone number or the six-digit delivery pincode for this order."
+                )
+                return self._result(answer, tool_calls=tool_calls)
             self.verification_attempts += 1
             checked = lookup_order(self.order_id, verification_value=normalize_digits(digits.group(1)))
             tool_calls.append({"tool": "lookup_order", "verified": bool(checked.get("verified"))})
@@ -152,10 +179,21 @@ class SupportAgent:
                     raw_question = self.pending_question
                     self.pending_question = None
             else:
+                mode = language_mode(raw_question)
                 if self.verification_attempts >= 2:
                     self.awaiting_verification = False
-                    return self._result("I couldn’t verify those details, so I can’t share order information. Please contact support from your registered phone number; I can still help with general policies.", tool_calls=tool_calls)
-                return self._result("That verification didn’t match. Please try once more with the last four digits of your registered phone number or the delivery pincode.", tool_calls=tool_calls)
+                    answer = (
+                        "सत्यापन सफल नहीं हुआ, इसलिए मैं ऑर्डर की जानकारी साझा नहीं कर सकती। कृपया अपने रजिस्टर्ड फोन नंबर से सपोर्ट से संपर्क करें; मैं सामान्य नीतियों में मदद कर सकती हूँ।" if mode == "hi" else
+                        "Verification match nahi hui, isliye main order details share nahi kar sakti. Registered phone number se support contact karein; main general policy help kar sakti hoon." if mode == "hi-en" else
+                        "I couldn’t verify those details, so I can’t share order information. Please contact support from your registered phone number; I can still help with general policies."
+                    )
+                    return self._result(answer, tool_calls=tool_calls)
+                answer = (
+                    "ये विवरण मेल नहीं खाते। कृपया एक बार फिर रजिस्टर्ड फोन नंबर के आख़िरी चार अंक या डिलीवरी पिनकोड बताएं।" if mode == "hi" else
+                    "Ye details match nahi hui. Ek baar aur registered phone ke last 4 digits ya delivery pincode batayein." if mode == "hi-en" else
+                    "That verification didn’t match. Please try once more with the last four digits of your registered phone number or the delivery pincode."
+                )
+                return self._result(answer, tool_calls=tool_calls)
 
         # Explicit or safety-critical escalation. Use the supplied ticket tool and
         # report success only when the mock tool confirms it.
