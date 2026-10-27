@@ -12,7 +12,7 @@ from typing import Any
 from gnani.stt import GnaniSTTClient
 from gnani.tts import GnaniTTSClient
 
-from src.agent import SupportAgent
+from src.agent import SupportAgent, language_mode
 
 
 def transcribe_audio(audio_path: str | Path, language_code: str = "en-IN") -> str:
@@ -32,6 +32,7 @@ def process_voice_turn(
     language_code: str = "en-IN",
     voice: str = "Kaveri",
     tts_model: str = "timbre-v2.5",
+    tts_language: str | None = None,
 ) -> dict[str, Any]:
     """Transcribe, answer, synthesize, and return auditable turn metadata."""
     heard = transcribe_audio(audio_path, language_code=language_code)
@@ -48,11 +49,14 @@ def process_voice_turn(
     output_path = Path(output_audio_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     tts = GnaniTTSClient()
+    if not tts_language or tts_language.casefold() == "auto":
+        mode = language_mode(answer)
+        tts_language = {"hi": "hi-IN", "hi-en": "hi-en", "en": "en-IN"}[mode]
     tts.synthesize(
         answer,
         voice=voice,
         model=tts_model,
-        language=language_code,
+        language=tts_language,
         output_file=str(output_path),
     )
     return {
@@ -60,5 +64,7 @@ def process_voice_turn(
         "transcript": heard,
         "answer": answer,
         "output_audio": str(output_path),
+        "stt_language": language_code,
+        "tts_language": tts_language,
         "sources": sources,
     }
