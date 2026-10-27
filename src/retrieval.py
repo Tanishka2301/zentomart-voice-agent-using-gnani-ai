@@ -22,7 +22,7 @@ class Chunk:
 
 def tokenize(text: str) -> list[str]:
     # Normalize common Devanagari nukta variants so equivalent spellings match.
-    text = text.replace("\\u093c", "")
+    text = text.replace("\u093c", "")
     return [token.lower() for token in TOKEN_RE.findall(text)]
 
 QUERY_EXPANSIONS = {
