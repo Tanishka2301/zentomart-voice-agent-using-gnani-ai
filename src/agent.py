@@ -144,10 +144,10 @@ class SupportAgent:
             self.verified_order = None
             self.verification_attempts = 0
             self.awaiting_verification = True
-            self.pending_question = raw_question
+            self.pending_question = SENSITIVE_DIGITS_RE.sub("[REDACTED_NUMBER]", ORDER_ID_RE.sub("[ORDER_ID]", raw_question))
             pending = lookup_order(self.order_id)
             tool_calls.append({"tool": "lookup_order", "verified": bool(pending.get("verified"))})
-            safe_question = ORDER_ID_RE.sub("[ORDER_ID]", raw_question)
+            safe_question = SENSITIVE_DIGITS_RE.sub("[REDACTED_NUMBER]", ORDER_ID_RE.sub("[ORDER_ID]", raw_question))
             self.history.append({"role": "user", "content": safe_question})
             mode = language_mode(raw_question)
             prefix = "" if self.introduced else (
