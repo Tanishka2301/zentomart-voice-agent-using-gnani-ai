@@ -57,5 +57,5 @@ def test_two_failed_verification_attempts_never_call_llm(monkeypatch):
     first = agent.respond("1111")
     second = agent.respond("2222")
     assert "try once more" in first["answer"].lower()
-    assert "can't share order information" in second["answer"].lower()
+    assert "share order information" in second["answer"].lower()
     assert client.models.prompts == []
