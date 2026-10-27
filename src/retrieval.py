@@ -7,7 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
+TOKEN_RE = re.compile(r"[^\\W_]+", re.IGNORECASE | re.UNICODE)
 SECTION_RE = re.compile(r"^##\s*\[([A-Za-z0-9_.-]+)\]", re.MULTILINE)
 META_RE = re.compile(r"(?m)^([a-z_]+):\s*(.*?)\s*$")
 
