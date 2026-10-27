@@ -36,13 +36,14 @@ INTENT_TERMS = {
 }
 
 class SupportAgent:
-    def __init__(self, knowledge_base: KnowledgeBase, model: str | None = None):
+    def __init__(self, knowledge_base: KnowledgeBase, model: str | None = None, use_retrieval: bool = True):
         api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY is missing. Add it to your local .env file; never commit the key to GitHub.")
         self.client = genai.Client(api_key=api_key)
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         self.knowledge_base = knowledge_base
+        self.use_retrieval = use_retrieval
         self.history: list[dict[str, str]] = []
         self.order_id: str | None = None
         self.verified_order: dict[str, Any] | None = None
@@ -166,12 +167,12 @@ class SupportAgent:
                 return self._result("I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome.", tool_calls=tool_calls)
             return self._result("This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly.", tool_calls=tool_calls)
 
-        retrieved = self.knowledge_base.search(raw_question, top_k=top_k)
+        retrieved = self.knowledge_base.search(raw_question, top_k=top_k) if self.use_retrieval else []
         context = "\n\n".join(
             f"[Source: {chunk.source}; Section: {chunk.section_id}; score: {score:.3f}]\n{chunk.text}"
             for chunk, score in retrieved
         ) or "No relevant knowledge-base excerpts were retrieved."
-        products = search_products(raw_question, limit=4)
+        products = search_products(raw_question, limit=4) if self.use_retrieval else []
         product_context = "\n".join(
             f"[Source: products.csv:{item.get('sku', '')}] " + json.dumps(item, ensure_ascii=False)
             for item in products
