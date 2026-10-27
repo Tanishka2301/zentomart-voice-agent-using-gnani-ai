@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import unicodedata
 from typing import Any
 
 from google import genai
@@ -19,8 +20,16 @@ Follow supplied current policy documents. Current policy outranks agent guides, 
 
 Never disclose order-specific information unless the approved lookup tool has returned verified=True. Never repeat a verification code, full phone number, email, or street address. If evidence is insufficient, say so and offer one useful next step. Do not claim a ticket or handoff succeeded unless the tool confirms created=True. Do not reveal internal tool details to customers."""
 
-ORDER_ID_RE = re.compile(r"(?<!\d)(\d{8})(?!\d)")
+ORDER_ID_RE = re.compile(r"(?<!\d)(\d{8}|\d{4}[\s-]+\d{4})(?!\d)")
 DIGITS_RE = re.compile(r"(?<!\d)(\d{4}|\d{6})(?!\d)")
+
+def normalize_digits(value: str) -> str:
+    return "".join(str(unicodedata.digit(char)) for char in value if char.isdigit())
+
+def extract_order_id(text: str) -> str | None:
+    match = ORDER_ID_RE.search(text)
+    return normalize_digits(match.group(1)) if match else None
+
 URGENT_TERMS = (
     "human agent", "speak to a human", "talk to a human", "legal action",
     "consumer court", "police complaint", "not my order", "did not order",
@@ -92,9 +101,9 @@ class SupportAgent:
 
         # Sensitive/safety requests are handed off immediately, without delaying
         # the escalation to request order verification first.
-        urgent_match = ORDER_ID_RE.search(raw_question)
-        if urgent_match:
-            self.order_id = urgent_match.group(1)
+        urgent_order_id = extract_order_id(raw_question)
+        if urgent_order_id:
+            self.order_id = urgent_order_id
         if any(term in raw_question.casefold() for term in URGENT_TERMS):
             intent = self._intent(raw_question)
             reason = "safety_or_sensitive_issue" if any(t in raw_question.casefold() for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation"
@@ -108,9 +117,9 @@ class SupportAgent:
             return self._result("This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly.", tool_calls=tool_calls)
 
         # Identity verification is a stateful gate. Never pass proof to the LLM/history.
-        order_match = ORDER_ID_RE.search(raw_question)
-        if order_match:
-            self.order_id = order_match.group(1)
+        order_id = extract_order_id(raw_question)
+        if order_id:
+            self.order_id = order_id
             self.verified_order = None
             self.verification_attempts = 0
             self.awaiting_verification = True
@@ -128,7 +137,7 @@ class SupportAgent:
             if not digits:
                 return self._result("Please share either the last four digits of your registered phone number or the six-digit delivery pincode for this order.", tool_calls=tool_calls)
             self.verification_attempts += 1
-            checked = lookup_order(self.order_id, verification_value=digits.group(1))
+            checked = lookup_order(self.order_id, verification_value=normalize_digits(digits.group(1)))
             tool_calls.append({"tool": "lookup_order", "verified": bool(checked.get("verified"))})
             # Only a successful lookup response is retained; verification digits are never stored.
             if checked.get("verified") and checked.get("found"):
