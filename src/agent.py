@@ -70,7 +70,8 @@ class SupportAgent:
         return "customer_support"
 
     def _ticket(self, question: str, reason: str, intent: str) -> dict[str, Any]:
-        summary = (f"Issue: {question[:500]}. Intent: {intent}. "
+        safe_issue = DIGITS_RE.sub("[VERIFICATION_CODE]", ORDER_ID_RE.sub("[ORDER_ID]", question[:500]))
+        summary = (f"Issue: {safe_issue}. Intent: {intent}. "
                    f"Order ID: {self.order_id or 'not provided'}. "
                    f"Checks: reviewed current conversation and available retrieved policy evidence. "
                    f"Escalation reason: {reason}.")
@@ -82,6 +83,23 @@ class SupportAgent:
         if not raw_question:
             return self._result("Please tell me how I can help.")
         tool_calls: list[dict[str, Any]] = []
+
+        # Sensitive/safety requests are handed off immediately, without delaying
+        # the escalation to request order verification first.
+        urgent_match = ORDER_ID_RE.search(raw_question)
+        if urgent_match:
+            self.order_id = urgent_match.group(1)
+        if any(term in raw_question.casefold() for term in URGENT_TERMS):
+            intent = self._intent(raw_question)
+            reason = "safety_or_sensitive_issue" if any(t in raw_question.casefold() for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation"
+            try:
+                ticket = self._ticket(raw_question, reason, intent)
+            except Exception:
+                ticket = {"created": False}
+            tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
+            if ticket.get("created"):
+                return self._result("I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome.", tool_calls=tool_calls)
+            return self._result("This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly.", tool_calls=tool_calls)
 
         # Identity verification is a stateful gate. Never pass proof to the LLM/history.
         order_match = ORDER_ID_RE.search(raw_question)
