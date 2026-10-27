@@ -58,12 +58,13 @@ URGENT_TERMS = (
     "hot battery", "getting hot",
 )
 INTENT_TERMS = {
-    "refund": ("refund", "money back", "reimbursement"),
+    "refund": ("refund", "money back", "reimbursement", "रिफंड", "रिफ़ंड", "mera refund", "refund kahan"),
     "delivery": ("delivery", "late", "delayed", "tracking", "where is my order"),
-    "return": ("return", "send it back", "pickup", "pick up"),
-    "damage_or_safety": ("damaged", "defective", "wrong item", "missing item", "burning smell", "sparks", "battery"),
+    "return": ("return", "send it back", "pickup", "pick up", "वापस", "वापसी", "wapas"),
+    "cancellation": ("cancel", "cancellation", "रद्द", "cancel kar", "cancel kar do"),
+    "damage_or_safety": ("damage", "damaged", "defective", "wrong item", "missing item", "burning smell", "sparks", "battery", "नुकसान", "टूटा"),
     "account_or_payment_security": ("not my order", "did not order", "didn't order", "unauthorized", "unauthorised", "fraud"),
-    "human_request": ("human agent", "speak to a human", "talk to a human"),
+    "human_request": ("human agent", "speak to a human", "talk to a human", "speak to a person", "talk to a person", "इंसान से बात", "किसी इंसान", "मानव एजेंट", "insaan se baat"),
     "compensation_request": ("compensation", "pay me", "waive the fee", "waive this fee", "make an exception"),
 }
 
