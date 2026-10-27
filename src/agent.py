@@ -179,13 +179,18 @@ class SupportAgent:
                 escalation_reason = "repeat_contact_within_7_days"
             issue_sku = str(self.verified_order.get("damage_sku") or "")
             damage_reported_by_caller = any(term in low for term in ("damaged", "defective", "wrong item", "missing item"))
-            if issue_sku and damage_reported_by_caller:
+            if damage_reported_by_caller:
+                candidates = []
                 for item in self.verified_order.get("items", []):
-                    if str(item.get("sku") or "") == issue_sku:
-                        if int(item.get("unit_price_inr") or 0) * int(item.get("qty") or 1) > 10000:
-                            is_urgent = True
-                            escalation_reason = "high_value_damaged_or_wrong_item"
-                        break
+                    title = str(item.get("title") or "").casefold()
+                    sku = str(item.get("sku") or "")
+                    if (issue_sku and sku == issue_sku) or (title and title in low):
+                        candidates.append(item)
+                if len(candidates) == 1:
+                    item = candidates[0]
+                    if int(item.get("unit_price_inr") or 0) * int(item.get("qty") or 1) > 10000:
+                        is_urgent = True
+                        escalation_reason = "high_value_damaged_or_wrong_item"
         if is_urgent:
             reason = escalation_reason or ("safety_or_sensitive_issue" if any(t in low for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation")
             ticket = self._ticket(raw_question, reason, intent)
