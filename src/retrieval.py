@@ -21,7 +21,29 @@ class Chunk:
     status: str = "current"
 
 def tokenize(text: str) -> list[str]:
+    # Normalize common Devanagari nukta variants so equivalent spellings match.
+    text = text.replace("\\u093c", "")
     return [token.lower() for token in TOKEN_RE.findall(text)]
+
+QUERY_EXPANSIONS = {
+    "रिफंड": ("refund",), "रिफ़ंड": ("refund",),
+    "मेरा": ("my",), "मेरी": ("my",), "मेरे": ("my",),
+    "कहाँ": ("where", "status"), "कहां": ("where", "status"),
+    "पैसा": ("money",), "पैसे": ("money",),
+    "वापस": ("return",), "वापसी": ("return",),
+    "ऑर्डर": ("order",), "आर्डर": ("order",),
+    "डिलीवरी": ("delivery",), "पिनकोड": ("pincode",),
+    "आखिरी": ("last", "digits"), "आख़िरी": ("last", "digits"),
+    "अंक": ("digits",), "चार": ("four",), "दिन": ("days",),
+    "कितने": ("how", "many"), "मिला": ("received",),
+    "मिले": ("received",), "आया": ("arrived",), "आए": ("arrived",),
+    "नहीं": ("not",), "है": ("is",), "हैं": ("are",),
+    "mera": ("my",), "meri": ("my",), "mere": ("my",),
+    "kahan": ("where", "status"), "paisa": ("money",),
+    "paise": ("money",), "wapas": ("return",), "kitne": ("how", "many"),
+    "din": ("days",), "nahi": ("not",), "mila": ("received",),
+    "aaya": ("arrived",), "hain": ("are",), "hai": ("is",),
+}
 
 class KnowledgeBase:
     def __init__(self, chunks: list[Chunk]):
@@ -68,7 +90,11 @@ class KnowledgeBase:
         return cls(chunks)
 
     def search(self, query: str, top_k: int = 5) -> list[tuple[Chunk, float]]:
-        query_terms = Counter(tokenize(query))
+        query_tokens = tokenize(query)
+        expanded_tokens = list(query_tokens)
+        for token in query_tokens:
+            expanded_tokens.extend(QUERY_EXPANSIONS.get(token, ()))
+        query_terms = Counter(expanded_tokens)
         if not query_terms:
             return []
         scored: list[tuple[Chunk, float]] = []
