@@ -202,6 +202,15 @@ class SupportAgent:
         low = raw_question.casefold()
         intent = self._intent(raw_question)
         compensation_request = any(term in low for term in ("compensation", "pay me", "waive the fee", "waive this fee", "make an exception")) and any(term in low for term in ("want", "give", "need", "pay", "waive", "exception", "compensation"))
+        mode = language_mode(raw_question)
+        voucher_request = ("voucher" in low or "वाउचर" in low) and any(term in low for term in ("chahiye", "mujhe", "want", "give me", "please give"))
+        if voucher_request and self.verified_order and str(self.verified_order.get("delivery_type") or "").lower() == "standard" and not self.verified_order.get("express_late_credit_inr"):
+            answer = (
+                "माफ़ कीजिए, स्टैंडर्ड डिलीवरी में देरी के लिए अतिरिक्त वाउचर नहीं दिया जा सकता। मैं केवल प्रकाशित नीति के अनुसार मदद कर सकती हूँ।" if mode == "hi" else
+                "Sorry, late Standard delivery ke liye extra voucher nahi diya ja sakta. Main sirf published policy ke according help kar sakti hoon." if mode == "hi-en" else
+                "Sorry, an extra voucher is not available for late Standard delivery. I can only help according to the published policy."
+            )
+            return self._result(answer, tool_calls=tool_calls)
         if compensation_request:
             ticket = self._ticket(raw_question, "compensation_or_policy_exception_request", "compensation_request")
             tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
@@ -210,6 +219,7 @@ class SupportAgent:
             return self._result("I can’t promise compensation or an exception beyond the published policy. A human colleague needs to review this, but I couldn’t create the ticket just now.", tool_calls=tool_calls)
         is_urgent = any(term in low for term in URGENT_TERMS)
         escalation_reason = None
+        late_refund = None
         if self.verified_order:
             late_refund = refund_overdue(self.verified_order, raw_question)
             if late_refund:
@@ -241,8 +251,27 @@ class SupportAgent:
             ticket = self._ticket(raw_question, reason, intent)
             tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
             if ticket.get("created"):
-                return self._result("I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome.", tool_calls=tool_calls)
-            return self._result("This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly.", tool_calls=tool_calls)
+                if late_refund and self.verified_order:
+                    rrn = self.verified_order.get(f"{late_refund['refund_type']}_rrn")
+                    if rrn:
+                        answer = (
+                            f"आपका रिफ़ंड रेफ़रेंस नंबर (RRN) {rrn} है; बैंक इसे ट्रेस कर सकता है। समय-सीमा से ज़्यादा देरी के कारण मैंने मानव सपोर्ट टीम के लिए टिकट बनाया है।" if mode == "hi" else
+                            f"Aapka refund reference number (RRN) {rrn} hai; bank isse trace kar sakta hai. Policy timeline se zyada delay ke liye maine human support team ka ticket create kiya hai." if mode == "hi-en" else
+                            f"Your refund reference number (RRN) is {rrn}; your bank can trace it. I’ve created a support ticket because the refund is beyond the policy timeline."
+                        )
+                        return self._result(answer, tool_calls=tool_calls)
+                answer = (
+                    "आपकी रिक्वेस्ट मानव सपोर्ट टीम को भेज दी गई है। टिकट बन गया है; मैं किसी खास नतीजे का वादा नहीं कर सकती।" if mode == "hi" else
+                    "Aapki request human support team ko bhej di hai. Ticket create ho gaya hai; main kisi specific outcome ka promise nahi kar sakti." if mode == "hi-en" else
+                    "I’m escalating this to a human support colleague. I’ve created a support ticket for review; I can’t promise a specific outcome."
+                )
+                return self._result(answer, tool_calls=tool_calls)
+            answer = (
+                "इस मामले में मानव सपोर्ट टीम की समीक्षा ज़रूरी है, लेकिन टिकट नहीं बन पाया। कृपया सीधे कस्टमर सपोर्ट से संपर्क करें।" if mode == "hi" else
+                "Is case mein human support team ki review zaroori hai, lekin ticket create nahi ho paya. Kripya customer support se contact karein." if mode == "hi-en" else
+                "This needs review by a human support colleague, but I couldn’t create the support ticket just now. Please contact customer support directly."
+            )
+            return self._result(answer, tool_calls=tool_calls)
 
         retrieved = self.knowledge_base.search(raw_question, top_k=top_k) if self.use_retrieval else []
         context = "\n\n".join(
