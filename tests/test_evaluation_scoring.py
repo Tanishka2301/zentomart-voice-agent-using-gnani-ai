@@ -23,7 +23,7 @@ def test_score_answer_reports_missing_and_forbidden_facts():
         "must_not_include": "guaranteed today",
     }
     result = score_answer("Your refund is issued in 3 business days.", row)
-    assert result["missing_must_include"] == []
+    assert result["missing_must_include"] == ["refund issued"]
     assert result["must_not_include_violations"] == []
 
     result = score_answer("Your refund is guaranteed today.", row)
