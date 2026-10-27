@@ -19,3 +19,8 @@ def test_empty_query():
 
 def test_unicode_tokenization():
     assert "नमस्ते" in tokenize("नमस्ते ग्राहक")
+
+def test_hindi_refund_query_expands_to_english_policy(tmp_path: Path):
+    (tmp_path / "refund.md").write_text("---\ndoc_type: policy\nstatus: current\n---\n## [REF-1] Refund timeline\nRefund timeline begins after quality check.", encoding="utf-8")
+    kb = KnowledgeBase.from_directory(tmp_path)
+    assert kb.search("मेरा रिफ़ंड कहाँ है")[0][0].section_id == "REF-1"
