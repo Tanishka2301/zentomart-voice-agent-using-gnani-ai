@@ -39,7 +39,7 @@ def test_order_details_are_gated_and_verification_secret_is_not_prompted(monkeyp
         return {"verified": False}
     monkeypatch.setattr(agent_module, "lookup_order", fake_lookup)
     first = agent.respond("Can you check order 1234 5678?")
-    assert "verification" in first["answer"].lower()
+    assert "last four digits" in first["answer"].lower()
     assert client.models.prompts == []
     second = agent.respond("My last four digits are 4533")
     assert second["answer"] == "I can help with that verified order."
