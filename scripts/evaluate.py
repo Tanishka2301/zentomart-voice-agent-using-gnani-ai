@@ -20,6 +20,11 @@ def read_rows(path: Path) -> list[dict[str, str]]:
 def split_facts(value: str) -> list[str]:
     return [part.strip() for part in (value or "").split(" ; ") if part.strip()]
 
+def fact_satisfied(fact: str, normalized_answer: str) -> bool:
+    # A/B means either alternative is acceptable in the supplied rubric.
+    alternatives = [normalize(part) for part in fact.split(" / ") if normalize(part)]
+    return any(part in normalized_answer for part in alternatives)
+
 
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", value.casefold())).strip()
@@ -51,7 +56,7 @@ def main() -> int:
             norm_answer = normalize(answer)
             required = split_facts(row.get("must_include", ""))
             forbidden = split_facts(row.get("must_not_include", ""))
-            missing = [fact for fact in required if normalize(fact) not in norm_answer]
+            missing = [fact for fact in required if not fact_satisfied(fact, norm_answer)]
             violations = [fact for fact in forbidden if normalize(fact) and normalize(fact) in norm_answer]
             gold = [x.strip() for x in row.get("gold_evidence", "").split(" ; ") if x.strip()]
             found_sections = {item["section_id"] for item in result.get("sources", [])}
