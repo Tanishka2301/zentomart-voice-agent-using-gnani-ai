@@ -35,15 +35,16 @@ def score_answer(answer: str, row: dict[str, str]) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-dir", default=os.getenv("ZENTOMART_DATA_DIR", ""))
+    parser.add_argument("--dataset-dir", default=None)
     parser.add_argument("--kb-dir", default="data/knowledge_base")
     parser.add_argument("--limit", type=int, default=0, help="Optional limit for a quick smoke run")
     parser.add_argument("--output", default="outputs/evaluation.json")
     args = parser.parse_args()
     load_dotenv()
-    if not args.dataset_dir:
-        parser.error("Pass --dataset-dir or set ZENTOMART_DATA_DIR.")
-    rows = read_rows(Path(args.dataset_dir) / "practice" / "questions.csv")
+    dataset_dir = args.dataset_dir or os.getenv("ZENTOMART_DATA_DIR", "").strip()
+    if not dataset_dir:
+        parser.error("Pass --dataset-dir or set ZENTOMART_DATA_DIR in your .env file.")
+    rows = read_rows(Path(dataset_dir) / "practice" / "questions.csv")
     if args.limit:
         rows = rows[:args.limit]
     kb = KnowledgeBase.from_directory(args.kb_dir)
