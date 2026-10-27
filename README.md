@@ -1,5 +1,7 @@
 # ZentroMart Voice Agent
 
+**Public repository:** https://github.com/Tanishka2301/zentomart-voice-agent-using-gnani-ai
+
 **Repository:** https://github.com/Tanishka2301/zentomart-voice-agent-using-gnani-ai
 
 An AI customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
@@ -113,6 +115,9 @@ scripts/
   import_dataset.py    # copies KB Markdown only
   evaluate.py          # prompt-only vs RAG comparison
   evaluate_conversations.py # multi-turn and tool-call checks
+docs/
+  report_template.md   # report draft with unfilled measurement placeholders
+  demo_script.md       # two-minute demo outline
 tests/
 run.py                  # text chat
 run_audio.py            # batch audio pipeline
