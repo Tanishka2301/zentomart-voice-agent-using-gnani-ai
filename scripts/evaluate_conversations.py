@@ -26,16 +26,17 @@ def satisfied(fact: str, answer: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-dir", default=os.getenv("ZENTOMART_DATA_DIR", ""))
+    parser.add_argument("--dataset-dir", default=None)
     parser.add_argument("--kb-dir", default="data/knowledge_base")
     parser.add_argument("--limit", type=int, default=0, help="Optional limit on number of conversations")
     parser.add_argument("--output", default="outputs/conversation_evaluation.json")
     args = parser.parse_args()
     load_dotenv()
-    if not args.dataset_dir:
-        parser.error("Pass --dataset-dir or set ZENTOMART_DATA_DIR.")
+    dataset_dir = args.dataset_dir or os.getenv("ZENTOMART_DATA_DIR", "").strip()
+    if not dataset_dir:
+        parser.error("Pass --dataset-dir or set ZENTOMART_DATA_DIR in your .env file.")
     grouped = defaultdict(list)
-    for row in rows(Path(args.dataset_dir) / "practice" / "conversations.csv"):
+    for row in rows(Path(dataset_dir) / "practice" / "conversations.csv"):
         grouped[row["conversation_id"]].append(row)
     ids = sorted(grouped)
     if args.limit:
