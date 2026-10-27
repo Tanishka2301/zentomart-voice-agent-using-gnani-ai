@@ -223,6 +223,14 @@ class SupportAgent:
                 "Sorry, an extra voucher is not available for late Standard delivery. I can only help according to the published policy."
             )
             return self._result(answer, tool_calls=tool_calls)
+        refund_status_question = any(term in low for term in ("refund", "रिफंड", "रिफ़ंड", "paisa kahan", "mera refund kahan"))
+        if self.verified_order and refund_status_question and str(self.verified_order.get("return_status") or "").lower() == "picked_up" and not self.verified_order.get("return_qc_passed_on"):
+            answer = (
+                "आपका रिटर्न पिकअप हो चुका है, लेकिन गुणवत्ता जाँच अभी बाकी है। गुणवत्ता जाँच पास होने के बाद रिफ़ंड शुरू होगा।" if mode == "hi" else
+                "Aapka return pickup ho chuka hai, lekin quality check abhi pending hai. Quality check pass hone ke baad refund initiate hoga." if mode == "hi-en" else
+                "Your return has been picked up, but the quality check is still pending. The refund is initiated after the item passes the quality check."
+            )
+            return self._result(answer, tool_calls=tool_calls)
         if compensation_request:
             ticket = self._ticket(raw_question, "compensation_or_policy_exception_request", "compensation_request")
             tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
