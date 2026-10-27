@@ -35,7 +35,7 @@ def language_mode(text: str) -> str:
     if any("\u0900" <= char <= "\u097f" for char in text):
         return "hi"
     low = text.casefold()
-    markers = ("mujhe", "mera", "meri", "hai", "hain", "kahan", "nahi", "kar sakti", "kar do", "chahiye", "order number hai", "last four digits")
+    markers = ("mujhe", "mera", "meri", "main", "hai", "hain", "kahan", "nahi", "kar sakti", "kar do", "kar rahi", "kar raha", "rahi hoon", "raha hoon", "is hafte", "baare mein", "rupaye", "paisa", "paise", "kya", "chahiye", "order number hai", "last four digits")
     return "hi-en" if any(marker in low for marker in markers) else "en"
 
 def verification_prompt(mode: str) -> str:
