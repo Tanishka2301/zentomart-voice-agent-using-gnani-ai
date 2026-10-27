@@ -1,0 +1,2 @@
+# Initial minimal dependencies; update as implementation choices are confirmed.
+python-dotenv>=1.0
