@@ -24,7 +24,7 @@ class Chunk:
 def tokenize(text: str) -> list[str]:
     # Keep combining marks: Python's regular-expression \\w class drops many
     # Devanagari vowel signs and would split Hindi words into fragments.
-    text = text.replace("\\u093c", "")
+    text = text.replace("\u093c", "")
     tokens: list[str] = []
     current: list[str] = []
     for char in text:
