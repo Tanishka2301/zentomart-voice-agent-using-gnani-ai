@@ -56,9 +56,9 @@ def main() -> int:
         result_json = target_dir / f"{stem}_result.json"
         result_text = target_dir / f"{stem}_reply.txt"
 
-        # Each input file is treated as a separate customer turn/session by default.
-        # Conversation grouping can be added once the supplied evaluation schema is wired in.
-        agent.history.clear()
+        # Each file is a separate customer session. Reset all state, especially
+        # order-verification state, so one caller can never inherit another's session.
+        agent.reset()
         try:
             result = process_voice_turn(
                 audio_path=audio_path,
