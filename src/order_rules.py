@@ -16,12 +16,16 @@ MAX_BUSINESS_DAYS = {
 }
 
 def load_holidays() -> set[date]:
+    fallback = {
+        date(2026, 8, 15), date(2026, 10, 2),
+        date(2026, 10, 19), date(2026, 11, 9),
+    }
     configured = os.getenv("ZENTOMART_DATA_DIR", "").strip()
     if not configured:
-        return set()
+        return fallback
     path = Path(configured).expanduser().resolve() / "data" / "holidays.csv"
     if not path.is_file():
-        return set()
+        return fallback
     with path.open(encoding="utf-8-sig", newline="") as handle:
         return {date.fromisoformat(row["date"]) for row in csv.DictReader(handle) if row.get("date")}
 
