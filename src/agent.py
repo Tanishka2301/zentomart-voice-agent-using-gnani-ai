@@ -23,7 +23,7 @@ URGENT_TERMS = (
     "human agent", "speak to a human", "talk to a human", "legal action",
     "consumer court", "police complaint", "not my order", "did not order",
     "didn't order", "unauthorized", "unauthorised", "swelling battery",
-    "burning smell", "sparks", "injury", "damaged", "defective", "wrong item",
+    "burning smell", "sparks", "injury",
 )
 INTENT_TERMS = {
     "refund": ("refund", "money back", "reimbursement"),
@@ -124,8 +124,22 @@ class SupportAgent:
         low = raw_question.casefold()
         intent = self._intent(raw_question)
         is_urgent = any(term in low for term in URGENT_TERMS)
+        escalation_reason = None
+        if self.verified_order:
+            contacts = int(self.verified_order.get("contacts_last_7_days") or 0)
+            if contacts >= 2:
+                is_urgent = True
+                escalation_reason = "repeat_contact_within_7_days"
+            issue_sku = str(self.verified_order.get("damage_sku") or "")
+            if issue_sku:
+                for item in self.verified_order.get("items", []):
+                    if str(item.get("sku") or "") == issue_sku:
+                        if int(item.get("unit_price_inr") or 0) > 10000:
+                            is_urgent = True
+                            escalation_reason = "high_value_damaged_or_wrong_item"
+                        break
         if is_urgent:
-            reason = "safety_or_sensitive_issue" if any(t in low for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order")) else "customer_request_or_policy_escalation"
+            reason = escalation_reason or ("safety_or_sensitive_issue" if any(t in low for t in ("battery", "burning smell", "sparks", "injury", "unauthorized", "unauthorised", "not my order", "didn't order", "did not order", "police complaint", "consumer court", "legal action")) else "customer_request_or_policy_escalation")
             ticket = self._ticket(raw_question, reason, intent)
             tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
             if ticket.get("created"):
