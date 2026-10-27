@@ -1,5 +1,7 @@
 # ZentroMart Voice Agent
 
+![Tests](https://github.com/Tanishka2301/zentomart-voice-agent-using-gnani-ai/actions/workflows/tests.yml/badge.svg)
+
 **Public repository:** https://github.com/Tanishka2301/zentomart-voice-agent-using-gnani-ai
 
 **Repository:** https://github.com/Tanishka2301/zentomart-voice-agent-using-gnani-ai
