@@ -61,6 +61,11 @@ def refund_overdue(order: dict, question: str) -> dict | None:
         "money not credited", "money hasn't arrived", "money has not arrived",
         "still waiting for refund", "refund not credited", "not credited yet",
         "haven't received my refund", "have not received my refund",
+        "mera refund kahan hai", "refund kahan hai", "paisa kahan hai",
+        "refund nahi mila", "refund nahi aaya", "paise nahi aaye",
+        "मेरा रिफ़ंड कहाँ है", "मेरा रिफंड कहाँ है", "रिफ़ंड कहाँ है",
+        "रिफंड कहाँ है", "रिफ़ंड नहीं मिला", "रिफंड नहीं मिला",
+        "रिफ़ंड नहीं आया", "रिफंड नहीं आया", "पैसे नहीं आए",
     ))
     if not complaint:
         return None
