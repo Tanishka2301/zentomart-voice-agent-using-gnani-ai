@@ -101,8 +101,9 @@ Supported input extensions are WAV, MP3, FLAC, OGG and M4A. Gnani SDK behavior a
 src/
   agent.py             # Gemini response flow, verification gate, ticket escalation
   business_tools.py    # safe adapter to the supplied offline tools
+  catalog.py           # product, pincode and calendar context
   retrieval.py         # metadata-aware Markdown chunking and retrieval
-  order_rules.py        # business-day refund escalation rules
+  order_rules.py       # business-day refund escalation rules
   voice.py             # Gnani STT/TTS adapter
 scripts/
   import_dataset.py    # copies KB Markdown only
