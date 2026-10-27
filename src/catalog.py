@@ -7,6 +7,7 @@ import unicodedata
 from pathlib import Path
 
 TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
+PRODUCT_STOPWORDS = {"what", "is", "the", "for", "my", "this", "that", "a", "an", "of", "does", "do", "have", "has", "tell", "me", "about", "please", "can", "i", "on", "in", "to", "and", "zentomart", "product", "item", "warranty", "price", "return", "refund", "order", "policy"}
 
 def search_products(query: str, limit: int = 4) -> list[dict[str, str]]:
     configured = os.getenv("ZENTOMART_DATA_DIR", "").strip()
@@ -15,7 +16,7 @@ def search_products(query: str, limit: int = 4) -> list[dict[str, str]]:
     path = Path(configured).expanduser().resolve() / "data" / "products.csv"
     if not path.is_file():
         return []
-    terms = {token.casefold() for token in TOKEN_RE.findall(query)}
+    terms = {token.casefold() for token in TOKEN_RE.findall(query) if token.casefold() not in PRODUCT_STOPWORDS}
     if not terms:
         return []
     scored = []
@@ -24,7 +25,7 @@ def search_products(query: str, limit: int = 4) -> list[dict[str, str]]:
             sku = (row.get("sku") or "").casefold()
             title = (row.get("title") or "").casefold()
             brand = (row.get("brand") or "").casefold()
-            haystack = set(TOKEN_RE.findall(" ".join(row.values())))
+            haystack = set(TOKEN_RE.findall(" ".join((row.get("sku") or "", row.get("title") or "", row.get("brand") or ""))))
             exact_sku = sku and sku in query.casefold()
             overlap = len(terms & haystack)
             if exact_sku or overlap:
