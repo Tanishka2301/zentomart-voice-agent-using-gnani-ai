@@ -56,7 +56,10 @@ def refund_overdue(order: dict, question: str) -> dict | None:
     low = question.casefold()
     complaint = any(term in low for term in (
         "refund not received", "refund hasn't arrived", "refund has not arrived",
-        "money not credited", "still waiting for refund", "refund not credited",
+        "refund hasn't come", "refund has not come", "refund is late", "refund delayed",
+        "where is my refund", "where's my refund", "still no refund",
+        "money not credited", "money hasn't arrived", "money has not arrived",
+        "still waiting for refund", "refund not credited", "not credited yet",
         "haven't received my refund", "have not received my refund",
     ))
     if not complaint:
