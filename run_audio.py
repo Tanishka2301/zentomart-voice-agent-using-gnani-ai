@@ -22,7 +22,8 @@ def main() -> int:
     parser.add_argument("--input-dir", required=True, help="Folder containing customer audio files")
     parser.add_argument("--output-dir", default="outputs", help="Folder for JSON, TXT, and WAV replies")
     parser.add_argument("--kb-dir", default="data/knowledge_base", help="Folder containing kb Markdown files")
-    parser.add_argument("--language", default="en-IN", help="Gnani language code, e.g. en-IN or hi-IN")
+    parser.add_argument("--language", default="en-IN", help="Gnani STT language code, e.g. en-IN or hi-IN")
+    parser.add_argument("--tts-language", default="auto", help="Gnani TTS language: auto, en-IN, hi-IN, or hi-en")
     parser.add_argument("--voice", default="Kaveri", help="Gnani TTS voice")
     parser.add_argument("--tts-model", default="timbre-v2.5", help="Gnani TTS model")
     args = parser.parse_args()
@@ -65,6 +66,7 @@ def main() -> int:
                 agent=agent,
                 output_audio_path=reply_audio,
                 language_code=args.language,
+                tts_language=args.tts_language,
                 voice=args.voice,
                 tts_model=args.tts_model,
             )
