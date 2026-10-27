@@ -68,6 +68,14 @@ python scripts/evaluate.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_
 
 Use `--limit 5` for a quick smoke run. The JSON report is written to `outputs/evaluation.json`, which is ignored by Git.
 
+Evaluate the 23 multi-turn practice conversations, including expected tool-call checks:
+
+```bash
+python scripts/evaluate_conversations.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
+```
+
+This creates `outputs/conversation_evaluation.json`. Review flagged turns manually; automated fact matching is a diagnostic, not a substitute for human review.
+
 Batch voice processing (record your own audio; the dataset has no prerecorded audio):
 
 ```bash
