@@ -32,7 +32,7 @@ def extract_order_id(text: str) -> str | None:
     return normalize_digits(match.group(1)) if match else None
 
 def language_mode(text: str) -> str:
-    if any("\\u0900" <= char <= "\\u097f" for char in text):
+    if any("\u0900" <= char <= "\u097f" for char in text):
         return "hi"
     low = text.casefold()
     markers = ("mujhe", "mera", "meri", "hai", "hain", "kahan", "nahi", "kar sakti", "kar do", "chahiye", "order number hai", "last four digits")
@@ -47,8 +47,10 @@ def verification_prompt(mode: str) -> str:
 
 URGENT_TERMS = (
     "human agent", "speak to a human", "talk to a human", "speak to an agent",
-    "talk to an agent", "real person", "customer service representative",
-    "manager", "legal action", "consumer court", "police complaint",
+    "talk to an agent", "speak to a person", "talk to a person",
+    "real person", "customer service representative", "manager",
+    "इंसान से बात", "किसी इंसान", "मानव एजेंट", "insaan se baat", "kisi insaan",
+    "legal action", "consumer court", "police complaint",
     "not my order", "did not order", "didn't order", "didn't place this order",
     "did not place this order", "unauthorized", "unauthorised",
     "unauthorized transaction", "unrecognised transaction", "unrecognized transaction",
