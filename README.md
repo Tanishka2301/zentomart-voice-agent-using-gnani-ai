@@ -1,117 +1,104 @@
 # ZentroMart Voice Agent
 
-An AI-powered customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
+An AI customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
 
-> **Current status:** Initial text prototype scaffold committed. Retrieval, Gemini response logic, a Gnani STT/TTS adapter, and a batch audio entry point are committed, but they have **not been executed or validated in this GitHub-only session**. Order tools, full dataset validation, practice-set evaluation, and end-to-end voice testing remain.
+> **Implementation status:** Dataset-aware retrieval, Gemini response generation, identity-gated order lookup, synthetic escalation tickets, practice-question evaluation, and a Gnani STT/TTS batch pipeline are implemented in the repository. They still require execution with your local API credentials and the supplied dataset; do not treat them as validated until the tests and end-to-end run pass.
 
-## Capstone goals
+## Features
 
-- Answer customer questions using ZentroMart's company documents.
-- Retrieve relevant policy/FAQ passages (RAG) and report the source sections used.
-- Maintain conversation context for follow-up questions.
-- Integrate the supplied `lookup_order(order_id)` and `create_ticket(summary)` tools, including caller verification and honest handoff reporting.
-- Use **Gnani.ai only** for speech-to-text (STT) and text-to-speech (TTS).
-- Provide a reproducible batch-run command that processes a folder of audio files and saves replies, speech, and retrieved evidence.
-
-## Architecture
-
-```text
-Customer text
-    ↓
-Lexical retrieval over kb/*.md
-    ↓
-Retrieved excerpts + recent conversation
-    ↓
-Gemini LLM (GEMINI_API_KEY)
-    ↓
-Answer + source section IDs
-
-Voice pipeline (planned):
-Audio → Gnani STT → same support agent → Gnani TTS → saved reply audio
-```
-
-The current retrieval baseline uses lexical scoring rather than vector embeddings. This is an intentionally simple baseline; it must be evaluated against the provided `gold_evidence` labels before claiming retrieval quality. A later iteration can add embeddings if that improves measured results.
-
-## Repository layout
-
-```text
-.
-├── src/
-│   ├── __init__.py
-│   ├── agent.py            # Gemini-backed response logic
-│   └── retrieval.py        # Markdown chunking and lexical retrieval
-├── tests/
-│   └── test_retrieval.py
-├── data/
-│   └── knowledge_base/     # Place permitted kb/*.md files here locally
-├── docs/                   # Report and demo notes (to be added)
-├── .env.example            # Variable names only; no credentials
-├── .gitignore
-├── requirements.txt
-└── run.py                  # Text-mode prototype entry point
-```
+- Retrieval over the supplied Markdown knowledge base, preserving section IDs and excluding superseded documents.
+- Policy-aware ranking: current policy documents rank above agent guides, help articles, FAQs and marketing pages.
+- Gemini-backed concise responses with source/evidence reporting and recent-turn context.
+- Order lookup through the dataset's original `tools/tools.py`. Order details are not returned until the caller supplies the registered phone's last four digits or delivery pincode.
+- Synthetic human-handover tickets through the supplied `create_ticket` tool. The agent reports a ticket only when the tool confirms creation.
+- Gnani.ai STT/TTS adapter and batch audio processing; no audio files are included in the dataset.
+- Practice-question evaluation output with required/forbidden fact checks and evidence-hit tracking.
 
 ## Setup
 
-Python 3.11 or a compatible version is recommended.
+Python 3.11 or compatible is recommended.
 
-1. Clone this repository and open its folder.
-2. Create and activate a virtual environment.
-3. Install dependencies:
+1. Clone this repository and open the project folder.
+2. Create and activate a virtual environment, then install dependencies:
 
    ```bash
    python -m venv .venv
-   # Windows PowerShell:
+   # Windows PowerShell
    .\.venv\Scripts\Activate.ps1
-   # macOS/Linux:
+   # macOS/Linux
    # source .venv/bin/activate
    pip install -r requirements.txt
    ```
 
-4. Copy `.env.example` to a local file named `.env`, then add your own `GEMINI_API_KEY` and `GNANI_API_KEY`. Do not commit `.env`.
-5. Extract the supplied capstone ZIP locally. Read `README.md`, `DATA_DICTIONARY.md`, and `ZIP_SCHEMA.md` first. Keep the dataset ZIP, customer/order CSVs, and private evaluation data out of this public repository.
-6. For the current text prototype, place the supplied `kb/` folder at `data/knowledge_base/` locally, or pass its path to `--kb-dir`.
+3. Extract the supplied `Capstone_Project_Dataset_FTTT_2026.zip` outside this repository. Keep the ZIP, raw CSVs, practice labels, customer/order records and generated ticket file out of GitHub.
+4. Copy `.env.example` to `.env` and set `GEMINI_API_KEY`, `GNANI_API_KEY`, and `ZENTOMART_DATA_DIR` to your local values. Set `ZENTOMART_DATA_DIR` to the absolute path of the extracted folder containing `tools/`, `data/`, `kb/`, and `practice/`. Never commit `.env` or keys.
+5. Copy the KB documents into the local project:
 
-Run the text prototype:
+   ```bash
+   python scripts/import_dataset.py "PATH/TO/Capstone_Project_Dataset_FTTT_2026"
+   ```
+
+   Replace the example path with your extracted dataset folder. This copies only Markdown KB files into `data/knowledge_base/`; it does not copy the CSVs or evaluation labels.
+
+6. Run the supplied dataset validator from the extracted dataset folder:
+
+   ```bash
+   python validate_dataset.py
+   ```
+
+## Run
+
+Text mode:
 
 ```bash
 python run.py --kb-dir data/knowledge_base
 ```
 
-Run the retrieval tests:
+Tests:
 
 ```bash
 pytest -q
 ```
 
-The text prototype requires a valid Gemini API key. The batch voice entry point also requires a valid Gnani API key and compatible audio files. It uses the documented `gnani-vachana` SDK calls; actual provider behavior still needs a local smoke test.
+Evaluate the 52 single-turn practice questions (requires Gemini access):
 
-## Dataset rules
+```bash
+python scripts/evaluate.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
+```
 
-- Use the supplied synthetic dataset only; do not use real customer data or real call recordings.
-- Keep all customer/order identifiers and pincodes as strings.
-- Use the current policy documents and respect their precedence. Superseded policies must not override current policy.
-- Historical support logs are context, not policy authority.
-- The dataset's reference date is **20 October 2026**. Business-day calculations run Monday–Saturday, excluding dates in `holidays.csv`; return windows use calendar days.
-- Verify callers using the supplied tool's required phone-last-four-digits or delivery-pincode check before revealing order details.
-- Report ticket creation/handoff only when the tool confirms success.
+Use `--limit 5` for a quick smoke run. The JSON report is written to `outputs/evaluation.json`, which is ignored by Git.
 
-## Planned milestones
+Batch voice processing (record your own audio; the dataset has no prerecorded audio):
 
-- [x] Create repository scaffold and secret/data exclusions.
-- [x] Add Markdown knowledge-base chunking and lexical retrieval baseline.
-- [x] Add a Gemini-backed text response prototype with source reporting.
-- [ ] Run the code and tests locally; fix any environment or API issues.
-- [ ] Inspect the supplied dataset and use the provided validation script.
-- [ ] Connect the supplied order lookup and ticket creation tools safely.
-- [ ] Add session-aware follow-ups, clarifying questions, refusals, and handoff logic.
-- [ ] Evaluate prompt-only (Step 1) versus retrieval-grounded (Step 2) answers on the practice set.
-- [ ] Integrate Gnani STT/TTS using the official SDK and named TTS model.
-- [ ] Add the required batch audio command and save transcript, response text/audio, and retrieved evidence.
-- [ ] Prepare a report of up to four pages and a demo of up to two minutes.
+```bash
+python run_audio.py --input-dir recordings --output-dir outputs/voice --kb-dir data/knowledge_base --language en-IN
+```
 
-## Security
+Supported input extensions are WAV, MP3, FLAC, OGG and M4A. Gnani SDK behavior and audio formats must be smoke-tested with your account.
 
-- Never commit API keys, passwords, access tokens, or a real `.env` file.
-- Do not upload the supplied dataset ZIP, raw CSV tables, or private evaluation files.
-- Do not add a public license until redistribution rights for all included material are confirmed.
+## Dataset and safety rules
+
+- All supplied customer/order data is synthetic. Do not use real customer information or real call recordings.
+- Keep identifiers such as order IDs, customer IDs, SKUs, pincodes and refund references as strings.
+- The fixed dataset reference date is **20 October 2026**. Business days are Monday–Saturday excluding dates in `holidays.csv`; return windows use calendar days.
+- Current policy documents take precedence over agent guides, help articles, FAQs and marketing. Superseded policy documents are excluded from retrieval.
+- Historical support logs are examples of past human behavior, not policy authority.
+- Verify callers before disclosing specific order status, items, addresses, amounts or refund information. The supplied verification mechanism is a synthetic educational mock, not production-grade authentication.
+- Never include API keys, `.env`, raw data, practice labels or generated tickets in a public repository.
+- No license is added because redistribution rights for the supplied capstone material have not been established.
+
+## Project structure
+
+```text
+src/
+  agent.py             # Gemini response flow, verification gate, ticket escalation
+  business_tools.py    # safe adapter to the supplied offline tools
+  retrieval.py         # metadata-aware Markdown chunking and retrieval
+  voice.py             # Gnani STT/TTS adapter
+scripts/
+  import_dataset.py    # copies KB Markdown only
+  evaluate.py          # practice-question checks and evidence tracking
+tests/
+run.py                  # text chat
+run_audio.py            # batch audio pipeline
+```
