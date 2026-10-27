@@ -15,3 +15,7 @@ def test_superseded_policy_is_excluded(tmp_path: Path):
 def test_empty_query():
     kb = KnowledgeBase([Chunk("x.md", "X-1", "some text", Counter({"some": 1}), "faq")])
     assert kb.search("!!!") == []
+
+
+def test_unicode_tokenization():
+    assert "नमस्ते" in tokenize("नमस्ते ग्राहक")
