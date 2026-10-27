@@ -33,6 +33,7 @@ INTENT_TERMS = {
     "damage_or_safety": ("damaged", "defective", "wrong item", "missing item", "burning smell", "sparks", "battery"),
     "account_or_payment_security": ("not my order", "did not order", "didn't order", "unauthorized", "unauthorised", "fraud"),
     "human_request": ("human agent", "speak to a human", "talk to a human"),
+    "compensation_request": ("compensation", "pay me", "waive the fee", "waive this fee", "make an exception"),
 }
 
 class SupportAgent:
@@ -143,6 +144,13 @@ class SupportAgent:
         # report success only when the mock tool confirms it.
         low = raw_question.casefold()
         intent = self._intent(raw_question)
+        compensation_request = any(term in low for term in ("compensation", "pay me", "waive the fee", "waive this fee", "make an exception")) and any(term in low for term in ("want", "give", "need", "pay", "waive", "exception", "compensation"))
+        if compensation_request:
+            ticket = self._ticket(raw_question, "compensation_or_policy_exception_request", "compensation_request")
+            tool_calls.append({"tool": "create_ticket", "created": bool(ticket.get("created")), "ticket_id": ticket.get("ticket_id")})
+            if ticket.get("created"):
+                return self._result("I can’t promise compensation or an exception beyond the published policy. I’ve created a support ticket for a human colleague to review your request.", tool_calls=tool_calls)
+            return self._result("I can’t promise compensation or an exception beyond the published policy. A human colleague needs to review this, but I couldn’t create the ticket just now.", tool_calls=tool_calls)
         is_urgent = any(term in low for term in URGENT_TERMS)
         escalation_reason = None
         if self.verified_order:
