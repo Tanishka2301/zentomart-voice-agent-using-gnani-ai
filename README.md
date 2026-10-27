@@ -52,6 +52,22 @@ Python 3.11 or compatible is recommended.
    python validate_dataset.py
    ```
 
+## Preflight checks
+
+Before making API calls, check local setup and dataset paths:
+
+```bash
+python scripts/preflight.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026"
+```
+
+Include `--audio` to check the Gnani STT/TTS imports too:
+
+```bash
+python scripts/preflight.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --audio
+```
+
+This checks configuration and file layout only; it does not send requests to Gemini or Gnani.
+
 ## Run
 
 Text mode:
