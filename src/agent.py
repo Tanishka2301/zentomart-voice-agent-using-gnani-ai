@@ -180,7 +180,7 @@ class SupportAgent:
         if self.verified_order:
             safe_order = dict(self.verified_order)
             # Exclude fields that should never be repeated to a customer or sent to the model.
-            for key in ("customer_first_name", "email", "phone", "address", "street_address"):
+            for key in ("customer_first_name", "customer_id", "email", "phone", "address", "street_address", "delivery_pincode"):
                 safe_order.pop(key, None)
             verified_context = json.dumps(safe_order, ensure_ascii=False, default=str)
 
