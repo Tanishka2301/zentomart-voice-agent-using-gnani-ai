@@ -8,7 +8,7 @@
 
 An AI customer-support assistant for the fictional ZentroMart store, built for the VoiceOps 2026 capstone.
 
-> **Implementation status:** Dataset-aware retrieval, Gemini response generation, identity-gated order lookup, synthetic escalation tickets, practice-question evaluation, and a Gnani STT/TTS batch pipeline are implemented in the repository. They still require execution with your local API credentials and the supplied dataset; do not treat them as validated until the tests and end-to-end run pass.
+> **Implementation and testing status:** The text-based assistant, dataset-aware retrieval, Gemini response generation, identity-gated order lookup, synthetic escalation tickets, and Gnani STT/TTS batch pipeline are implemented. Automated tests: **34 passed, 1 skipped**. Preflight checks passed, and one end-to-end voice test verified transcription, RAG-based response generation, and speech synthesis. API-dependent evaluation and broader voice testing remain.
 
 ## Features
 
