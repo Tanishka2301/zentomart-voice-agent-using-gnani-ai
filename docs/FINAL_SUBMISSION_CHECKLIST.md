@@ -1,52 +1,40 @@
 # Final Submission Checklist
 
-Use this checklist before submitting the ZentroMart VoiceOps capstone. Record only results you actually observe.
+This checklist records the evidence currently available for the ZentroMart VoiceOps 2026 capstone. Do not mark unverified provider or demo steps as complete.
 
-## 1. Repository and setup
+## Verified repository state
 
-- [ ] Confirm `.env` exists locally and contains working credentials. Never commit it or paste keys into chat.
-- [ ] Confirm `ZENTOMART_DATA_DIR` points to the extracted `Capstone_Project_Dataset_FTTT_2026` folder.
-- [ ] Confirm the imported knowledge base is present in `data/knowledge_base/`.
-- [ ] Run the dataset validator from the extracted dataset directory: `python validate_dataset.py`.
-- [ ] Run preflight: `python scripts/preflight.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --audio`.
+- [x] Project source, setup instructions, evaluation scripts, voice batch pipeline and documentation are present.
+- [x] .env.example uses placeholders; keep the real .env private and uncommitted.
+- [x] Dataset import produced 21 Markdown knowledge-base files in the local Codespaces workspace.
+- [x] GitHub Actions test workflow passed on the latest checked run (41023942202).
+- [x] A previous local test run reported 34 passed, 1 skipped. This is historical evidence, not a fresh run.
+- [x] Gemini connectivity smoke test returned API_OK.
 
-## 2. Automated checks
+## Evaluation evidence currently available
 
-- [ ] Run `python -m compileall -q src scripts run.py run_audio.py`.
-- [ ] Run `python -m pytest -q`.
-- [ ] Record the exact pass, skip and failure counts. Explain any skipped tests.
+A separate one-question smoke evaluation reported: 1/1 evaluated; RAG evidence hit rate 100%; prompt-only had 1 row missing required facts; RAG had 0; forbidden-claim matches were 0.
 
-## 3. Gemini and retrieval evaluation
+The later limited evaluation reported: 2/5 questions evaluated; 3 rows did not complete; RAG evidence hit rate 100% across the 2 evaluated rows; prompt-only had 2 evaluated rows missing required facts; RAG had 0; forbidden-claim matches were 0.
 
-- [ ] Confirm Gemini access with a small text-generation request before running the evaluators.
-- [ ] Run a small smoke evaluation first: `python -m scripts.evaluate --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base --limit 1`.
-- [ ] If that succeeds, run the full 52-question evaluation when quota and time permit: `python -m scripts.evaluate --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base`.
-- [ ] Run multi-turn evaluation when ready: `python -m scripts.evaluate_conversations --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base`.
-- [ ] Review `outputs/evaluation.json` and `outputs/conversation_evaluation.json`; record actual counts, errors, evidence-hit rate and limitations. Do not treat substring-based rubric checks as proof of semantic correctness.
-- [ ] If a provider quota or service error occurs, record it as an incomplete evaluation; do not report it as a model or RAG pass.
+These are small, partial diagnostic samples—not a full benchmark or proof of general accuracy. The three incomplete rows' error details have not been reviewed. The evaluation JSON is local and ignored by Git.
 
-## 4. Voice smoke test
+## Not yet verified — disclose honestly
 
-- [ ] Use a short, self-recorded test clip (no real customer audio).
-- [ ] Run the batch voice command from the README with the configured Gnani account.
-- [ ] Confirm the transcript, generated answer, output audio and evidence metadata are produced.
-- [ ] Record the number of successful and failed clips. Do not claim end-to-end voice success based only on imports or preflight.
+- [ ] Full 52-question evaluation.
+- [ ] Full 23-conversation / 96-turn evaluation.
+- [ ] Successful end-to-end Gnani STT → agent → Gnani TTS run with a self-recorded clip.
+- [ ] Final live demo recording.
+- [ ] Final report with complete measured test, evaluation, conversation and voice results.
 
-## 5. Demo and report
+Gemini free-tier quota/service errors were encountered. Do not repeatedly rerun generation or describe incomplete runs as successful.
 
-- [ ] Follow `docs/demo_script.md` and show only scenarios that work live.
-- [ ] Use synthetic order data and show the verification gate before order details are disclosed.
-- [ ] Show a handoff ticket only when the supplied mock tool confirms ticket creation.
-- [ ] Replace every `[FILL AFTER RUN]` placeholder in `docs/report_template.md` with measured results, or remove the draft-only template from the submitted report.
-- [ ] State clearly that the supplied order verification and ticketing tools are educational mocks, not production authentication or a live ticketing service.
-- [ ] Do not include API keys, `.env`, raw customer/order CSVs, practice labels, generated ticket files or private recordings in the public repository.
+## Final demo and safety
 
-## Current known status
+- Use only supplied synthetic order data and self-recorded audio.
+- Demonstrate that order details remain hidden until the mock verification tool succeeds.
+- Claim ticket creation only when the mock tool returns created=True.
+- State clearly that order verification and ticketing are educational mocks, not production authentication or a live ticketing service.
+- Never commit API keys, .env, raw customer/order CSVs, practice labels, generated ticket files or private recordings.
 
-- GitHub Actions test workflow: passing on the repository's latest checked commit before this checklist was added.
-- Local test run previously reported: 34 passed, 1 skipped. Re-run before submission and use the fresh output.
-- Gemini practice-question evaluation: previously blocked by a Gemini 429 free-tier quota response; a successful run has not yet been confirmed.
-- Complete Gnani STT → agent → TTS batch run: not yet confirmed.
-- Final demo recording and completed measured report: not yet confirmed.
-
-**Submission rule:** Mark a checkbox only after you have personally run the corresponding step and saved its actual result.
+**Submission guidance:** The repository and CI are in place, and a small RAG evaluation sample is encouraging. Submit with the limitations above clearly stated; do not claim full evaluation or end-to-end voice validation.
