@@ -74,7 +74,7 @@ class SupportAgent:
         if not api_key:
             raise RuntimeError("GEMINI_API_KEY is missing. Add it to your local .env file; never commit the key to GitHub.")
         self.client = genai.Client(api_key=api_key)
-        self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         self.knowledge_base = knowledge_base
         self.use_retrieval = use_retrieval
         self.history: list[dict[str, str]] = []
