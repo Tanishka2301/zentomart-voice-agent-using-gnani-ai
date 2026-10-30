@@ -55,7 +55,7 @@ URGENT_TERMS = (
     "did not place this order", "unauthorized", "unauthorised",
     "unauthorized transaction", "unrecognised transaction", "unrecognized transaction",
     "swelling battery", "burning smell", "sparks", "injury", "overheating",
-    "hot battery", "getting hot",
+    "hot battery", "getting hot", "damaged",
 )
 INTENT_TERMS = {
     "refund": ("refund", "money back", "reimbursement", "रिफंड", "रिफ़ंड", "mera refund", "refund kahan"),
