@@ -87,7 +87,7 @@ The offline suite covers retrieval and business-rule behavior. Dataset-backed se
 Evaluate the 52 single-turn practice questions (requires Gemini access):
 
 ```bash
-python scripts/evaluate.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
+python -m scripts.evaluate --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
 ```
 
 Use `--limit 5` for a quick smoke run. The JSON report is written to `outputs/evaluation.json`, which is ignored by Git.
@@ -95,7 +95,7 @@ Use `--limit 5` for a quick smoke run. The JSON report is written to `outputs/ev
 Evaluate the 23 multi-turn practice conversations, including expected tool-call checks:
 
 ```bash
-python scripts/evaluate_conversations.py --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
+python -m scripts.evaluate_conversations --dataset-dir "PATH/TO/Capstone_Project_Dataset_FTTT_2026" --kb-dir data/knowledge_base
 ```
 
 This creates `outputs/conversation_evaluation.json`. Review flagged turns manually; automated fact matching is a diagnostic, not a substitute for human review.
